@@ -1,6 +1,6 @@
 # Neural Zoo - Animal Doodle Classifier
 
-A comprehensive deep learning project for classifying hand-drawn animal doodles. This project implements a custom Deep Convolutional Neural Network (CNN) trained on the Google QuickDraw dataset and deploys the model as a real-time web application using Streamlit and Docker.
+A machine learning project that classifies hand-drawn animal doodles. The model is a custom Convolutional Neural Network (CNN) trained on the Google QuickDraw dataset, deployed as a responsive web app.
 
 **Live Demo:**
 
@@ -11,71 +11,62 @@ A comprehensive deep learning project for classifying hand-drawn animal doodles.
 
 ## 1. Problem Description
 
-**Business Context:**  
-Recognizing free-hand sketches is a complex Computer Vision problem with applications in education, digital art, and gamification. Unlike natural images (e.g., ImageNet), doodles are abstract, sparse, and suffer from high intra-class variance (everyone draws a "cat" differently).
+**Context:**  
+Recognizing free-hand sketches is a unique computer vision challenge. Doodles are abstract, often incomplete, and vary significantly between individuals. Unlike typical photo classification, the data here is sparse (lines on a blank background).
 
 **Problem Statement:**  
-This project aims to classify user drawings into **50 distinct animal categories** in real-time. The challenge is to build a model that is robust to noise, incomplete drawings, and varying stroke styles, running efficiently in a web browser.
+The objective is to classify user drawings into **50 distinct animal categories** in real-time. The system needs to be robust enough to handle different drawing styles and messy inputs while running efficiently in a browser environment.
 
 **Solution:**  
-We developed a custom **Deep CNN** architecture optimized for 28x28 grayscale bitmaps. The solution features a specialized preprocessing pipeline (center-crop-pad) to align user input with the training distribution and is deployed as a containerized web service.
+This project implements a **Deep CNN** trained on 28x28 grayscale bitmaps. A key part of the solution is the preprocessing pipeline, which centers and scales user input to match the training data distribution, ensuring consistent predictions.
 
 ---
 
 ## 2. Dataset
 
-The model is trained on the **Google QuickDraw Dataset**, a massive collection of 50 million drawings. We selected a balanced subset of **50 animal classes**.
+The training data comes from the **Google QuickDraw Dataset**, specifically a balanced subset of 50 animal classes.
 
-- **Format**: 28x28 grayscale bitmap images.
-- **Classes**: 50 animals (Ant, Bat, Cat, Dog, Elephant, Lion, Panda, Zebra, etc.).
-- **Size**: ~750,000 samples used for training/validation (15,000 per class).
+- **Format**: 28x28 grayscale bitmaps.
+- **Classes**: 50 animals (e.g., Cat, Dog, Elephant, Panda, Zebra).
+- **Size**: ~750,000 samples total (15,000 per class used for training).
 - **Source**: [Google QuickDraw Dataset](https://quickdraw.withgoogle.com/data)
 
 ---
 
 ## 3. Exploratory Data Analysis (EDA)
 
-Extensive EDA was conducted in `EDA-notebook.ipynb` to understand the data characteristics and design the preprocessing pipeline.
+The notebook `EDA-notebook.ipynb` contains the analysis of the dataset structure and experimental findings.
 
 **Key Insights:**
 
-- **Sparsity**: Doodles are >90% empty space (black background), requiring models to focus on structural strokes.
-- **Class Overlap**: Some classes (e.g., "Bear" vs "Panda", "Horse" vs "Zebra") are visually similar, requiring a deeper network to learn subtle distinguishing features.
-- **Preprocessing Criticality**: Raw user input is often off-center. We found that **Bounding Box Centering** is essential to match the QuickDraw data distribution.
+- **Sparsity**: Most pixels in the images are zero. Models need to focus purely on structural strokes.
+- **Alignment**: The original QuickDraw data is centered. To get accurate inference, the live web app mimics this by cropping and centering the user's drawing using a bounding box.
+- **Class Overlap**: Visually similar classes (like "Bear" and "Panda") required a deeper network architecture to distinguish subtle feature differences.
 
 ---
 
 ## 4. Model Training
 
-We experimented with Transfer Learning (MobileNetV2, EfficientNet) but found that a **Custom Deep CNN** performed best for this specific domain of low-resolution abstract art.
+Initial experiments with Transfer Learning (MobileNetV2) did not yield good results due to the small resolution (28x28) and domain mismatch. A **Custom Deep CNN** built from scratch proved to be more effective.
 
 **Model Architecture:**
 
 - **Input**: 28x28x1 Grayscale.
-- **Backbone**: 4 Convolutional Blocks (64 -> 128 -> 256 -> 512 filters).
-- **Neck**: Global Average Pooling (more robust than Flatten).
-- **Head**: Dense layers (1024 -> 512) with Batch Normalization and Dropout.
-- **Output**: Softmax over 50 classes.
+- **Structure**: 4 Convolutional blocks (64 to 512 filters).
+- **Regularization**: Batch Normalization and Dropout are used extensively to prevent overfitting.
 
-**Training Strategy:**
+**Training Configuration:**
 
 - **Optimizer**: AdamW.
-- **Learning Rate**: Cosine Decay with Warmup.
-- **Augmentation**: Rotation, Zoom, Shear, and Shift to simulate drawing variations.
-- **Regularization**: Dropout (0.25-0.5), Batch Norm, and L2 Weight Decay.
+- **Learning Rate**: Cosine Decay schedule with a warmup period.
+- **Augmentation**: Random rotation, shift, and zoom to simulate variations in user drawings.
 
-**Training History:**
+**Results:**
 
-![Training History](training_history.png)
-_(Fig 1. Training accuracy and loss curves over 50 epochs)_
-
-**Final Metrics:**
-
-- **Validation Accuracy**: **~79.0%** (Top-1)
+- **Validation Accuracy**: **~79%** (Top-1)
 - **Top-5 Accuracy**: **>94%**
-- This performance is near the state-of-the-art for this specific subset of noisy QuickDraw data.
 
-The training logic is exported to `train.py` for reproducibility.
+The training script `train.py` handles data downloading, processing, and the complete training loop.
 
 ---
 
@@ -83,97 +74,74 @@ The training logic is exported to `train.py` for reproducibility.
 
 ```
 .
-├── app.py                  # Streamlit web application for real-time inference
-├── train.py                # Script to train and save the model (doodle_cnn_best.keras)
-├── EDA-notebook.ipynb      # EDA, experiments, and transfer learning attempts
-├── requirements.txt        # Python dependencies
-├── Pipfile & Pipfile.lock  # Pipenv dependency management
-├── Dockerfile              # Docker configuration
+├── app.py                  # Streamlit application code
+├── train.py                # Model training script
+├── EDA-notebook.ipynb      # Analysis and experiments
+├── requirements.txt        # Project dependencies
+├── Dockerfile              # Docker container configuration
 ├── doodle_cnn_best.keras   # Trained model artifact
-├── classes.txt             # List of the 50 animal classes
-└── training_history.png    # Training performance plot
+└── classes.txt             # List of supported animal classes
 ```
 
 ---
 
-## 6. Installation & Reproducibility
+## 6. Installation
 
-Follow these steps to reproduce the project locally:
+To run the project locally:
 
-**1. Clone the repository:**
+1.  **Clone the repository:**
 
-```bash
-git clone https://github.com/TheManuAI/neural-zoo.git
-cd neural-zoo
-```
+    ```bash
+    git clone https://github.com/TheManuAI/neural-zoo.git
+    cd neural-zoo
+    ```
 
-**2. Set up Environment (Pipenv):**
+2.  **Install dependencies:**
 
-```bash
-pip install pipenv
-pipenv install
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-_Alternatively, use `pip install -r requirements.txt`_
-
-**3. Usage:**
-
-**Train the Model:**
-Run the training script to download data and train from scratch:
-
-```bash
-python train.py
-```
-
-**Run the App:**
-
-```bash
-streamlit run app.py
-```
-
-Access the web interface at `http://localhost:8501`.
+3.  **Run the application:**
+    ```bash
+    streamlit run app.py
+    ```
+    The app will open at `http://localhost:8501`.
 
 ---
 
 ## 7. Containerization
 
-The application is containerized using Docker for consistent deployment across any environment.
+A `Dockerfile` is included to ensure the application runs consistent across different environments (local, cloud, etc.).
 
-**Build Image:**
+**Build:**
 
 ```bash
 docker build -t neural-zoo .
 ```
 
-**Run Container:**
+**Run:**
 
 ```bash
-# Using host networking (simplest for Linux)
-docker run --net=host neural-zoo
-
-# OR using standard port mapping
 docker run -p 8501:8501 neural-zoo
 ```
 
-The app will be available at `http://localhost:8501`.
+---
+
+## 8. Deployment
+
+The application is deployed on **Hugging Face Spaces** using the Streamlit SDK.
+
+- **Platform**: Hugging Face Spaces
+- **URL**: [https://huggingface.co/spaces/TheManuAI/neural-zoo](https://huggingface.co/spaces/TheManuAI/neural-zoo)
 
 ---
 
-## 8. Cloud Deployment
+## Performance Summary
 
-The project is deployed and live on the following platforms:
+| Approach                      | Accuracy | Notes                                                   |
+| :---------------------------- | :------- | :------------------------------------------------------ |
+| Transfer Learning (MobileNet) | 40%      | Failed due to input size/domain mismatch.               |
+| **Custom Deep CNN**           | **79%**  | **Selected model. Best balance of speed and accuracy.** |
 
-- **Streamlit Cloud**: [https://neural-zoo.streamlit.app/](https://neural-zoo.streamlit.app/)
-- **Hugging Face Spaces**: [https://huggingface.co/spaces/TheManuAI/neural-zoo](https://huggingface.co/spaces/TheManuAI/neural-zoo)
-
----
-
-## Results Summary
-
-| Model Approach                  | Input Size | Val Accuracy | Status                   |
-| :------------------------------ | :--------- | :----------- | :----------------------- |
-| Transfer Learning (MobileNetV2) | 32x32      | ~40%         | Failed (Domain Mismatch) |
-| Shallow CNN                     | 28x28      | ~72%         | Baseline                 |
-| **Deep Custom CNN**             | **28x28**  | **~79%**     | **Selected**             |
-
-The final **Deep Custom CNN** provides the best balance of accuracy and inference speed (<100ms), making it ideal for the real-time interactive drawing app.
+The final model offers sub-100ms inference times, making it suitable for real-time interaction.
