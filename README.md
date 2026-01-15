@@ -1,6 +1,6 @@
 # Neural Zoo - Animal Doodle Classifier
 
-A machine learning project that classifies hand-drawn animal doodles. The model is a custom Convolutional Neural Network (CNN) trained on the Google QuickDraw dataset, deployed as a responsive web app.
+A machine learning project that classifies hand-drawn animal doodles. I built this custom Convolutional Neural Network (CNN) using the Google QuickDraw dataset and deployed it as a real-time web app.
 
 **Live Demo:**
 
@@ -15,10 +15,10 @@ A machine learning project that classifies hand-drawn animal doodles. The model 
 Recognizing free-hand sketches is a unique computer vision challenge. Doodles are abstract, often incomplete, and vary significantly between individuals. Unlike typical photo classification, the data here is sparse (lines on a blank background).
 
 **Problem Statement:**  
-The objective is to classify user drawings into **50 distinct animal categories** in real-time. The system needs to be robust enough to handle different drawing styles and messy inputs while running efficiently in a browser environment.
+My objective was to classify user drawings into **50 distinct animal categories** in real-time. The system needed to be robust enough to handle different drawing styles and messy inputs while running efficiently in a browser environment.
 
 **Solution:**  
-This project implements a **Deep CNN** trained on 28x28 grayscale bitmaps. A key part of the solution is the preprocessing pipeline, which centers and scales user input to match the training data distribution, ensuring consistent predictions.
+I developed a **Deep CNN** trained on 28x28 grayscale bitmaps. A key part of the solution is the preprocessing pipeline, which I designed to center and scale user input to match the training data distribution, ensuring consistent predictions.
 
 ---
 
@@ -31,29 +31,35 @@ The training data comes from the **Google QuickDraw Dataset**, specifically a ba
 - **Size**: ~750,000 samples total (15,000 per class used for training).
 - **Source**: [Google QuickDraw Dataset](https://quickdraw.withgoogle.com/data)
 
+Here is a glimpse of the random samples from the dataset:
+![EDA Samples](visualization/eda_samples.png)
+
 ---
 
 ## 3. Exploratory Data Analysis (EDA)
 
-The notebook `EDA-notebook.ipynb` contains the analysis of the dataset structure and experimental findings.
+I conducted extensive analysis in `EDA-notebook.ipynb` to understand the data structure.
 
 **Key Insights:**
 
 - **Sparsity**: Most pixels in the images are zero. Models need to focus purely on structural strokes.
-- **Alignment**: The original QuickDraw data is centered. To get accurate inference, the live web app mimics this by cropping and centering the user's drawing using a bounding box.
-- **Class Overlap**: Visually similar classes (like "Bear" and "Panda") required a deeper network architecture to distinguish subtle feature differences.
+- **Average Shapes**: By averaging thousands of images, I could see the "canonical" shape for each animal (e.g., the face shape of a cat vs. dog).
+
+![Mean Images](visualization/eda_mean.png)
+
+- **Alignment**: The original QuickDraw data is centered. I found that if I didn't center the user's input in the app, the model failed. This led to the bounding-box preprocessing step in `app.py`.
 
 ---
 
 ## 4. Model Training
 
-Initial experiments with Transfer Learning (MobileNetV2) did not yield good results due to the small resolution (28x28) and domain mismatch. A **Custom Deep CNN** built from scratch proved to be more effective.
+Initial experiments with Transfer Learning (MobileNetV2) did not yield good results due to the small resolution (28x28) and domain mismatch. I decided to build a **Custom Deep CNN** from scratch.
 
 **Model Architecture:**
 
 - **Input**: 28x28x1 Grayscale.
 - **Structure**: 4 Convolutional blocks (64 to 512 filters).
-- **Regularization**: Batch Normalization and Dropout are used extensively to prevent overfitting.
+- **Regularization**: I used Batch Normalization and Dropout extensively to prevent overfitting.
 
 **Training Configuration:**
 
@@ -66,7 +72,11 @@ Initial experiments with Transfer Learning (MobileNetV2) did not yield good resu
 - **Validation Accuracy**: **~79%** (Top-1)
 - **Top-5 Accuracy**: **>94%**
 
-The training script `train.py` handles data downloading, processing, and the complete training loop.
+**Training History:**
+![Training History](visualization/training_history.png)
+_(Fig: Training accuracy and loss curves over 50 epochs)_
+
+All training logic is exported to `train.py`.
 
 ---
 
@@ -79,6 +89,7 @@ The training script `train.py` handles data downloading, processing, and the com
 ├── EDA-notebook.ipynb      # Analysis and experiments
 ├── requirements.txt        # Project dependencies
 ├── Dockerfile              # Docker container configuration
+├── visualization/          # Plots and images
 ├── doodle_cnn_best.keras   # Trained model artifact
 └── classes.txt             # List of supported animal classes
 ```
@@ -112,7 +123,7 @@ To run the project locally:
 
 ## 7. Containerization
 
-A `Dockerfile` is included to ensure the application runs consistent across different environments (local, cloud, etc.).
+I included a `Dockerfile` to ensure the application runs consistently across different environments.
 
 **Build:**
 
@@ -130,9 +141,14 @@ docker run -p 8501:8501 neural-zoo
 
 ## 8. Deployment
 
-The application is deployed on **Hugging Face Spaces** using the Streamlit SDK.
+The application is deployed on multiple cloud platforms for redundancy:
 
-- **Platform**: Hugging Face Spaces
+**1. Streamlit Cloud:**
+
+- **URL**: [https://neural-zoo.streamlit.app/](https://neural-zoo.streamlit.app/)
+
+**2. Hugging Face Spaces:**
+
 - **URL**: [https://huggingface.co/spaces/TheManuAI/neural-zoo](https://huggingface.co/spaces/TheManuAI/neural-zoo)
 
 ---
@@ -144,4 +160,4 @@ The application is deployed on **Hugging Face Spaces** using the Streamlit SDK.
 | Transfer Learning (MobileNet) | 40%      | Failed due to input size/domain mismatch.               |
 | **Custom Deep CNN**           | **79%**  | **Selected model. Best balance of speed and accuracy.** |
 
-The final model offers sub-100ms inference times, making it suitable for real-time interaction.
+My final model offers sub-100ms inference times, making it suitable for real-time interaction.
